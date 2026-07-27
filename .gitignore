@@ -1,4 +1,4 @@
-# ============ 编译输出 ============
+#  编译输出 
 # 可执行文件
 *.exe
 *.out
@@ -13,7 +13,7 @@
 *.dylib
 *.dll
 
-# ============ CMake 构建目录 ============
+#  CMake 构建目录 
 build/
 cmake-build-*/
 CMakeCache.txt
@@ -23,7 +23,7 @@ cmake_install.cmake
 *.cmake
 !CMakeLists.txt
 
-# ============ IDE 配置 ============
+#  IDE 配置 
 # Visual Studio
 .vs/
 *.sln
@@ -44,7 +44,7 @@ x86/
 cmake-build-debug/
 cmake-build-release/
 
-# ============ 系统文件 ============
+#  系统文件 
 # Windows
 Thumbs.db
 Desktop.ini
@@ -60,20 +60,20 @@ $RECYCLE.BIN/
 *.swp
 *.swo
 
-# ============ 日志和临时文件 ============
+# 日志和临时文件 
 *.log
 *.tmp
 *.temp
 *.cache
 
-# ============ 测试输出 ============
+#  测试输出 
 test/
 *.test
 *.gcov
 *.gcda
 *.gcno
 
-# ============ 其他 ============
+#  其他
 # 备份文件
 *.bak
 *.backup
