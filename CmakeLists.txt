@@ -4,4 +4,13 @@ set(CMAKE_CXX_STANDARD 17)
 add_executable(
     FileManager
     src/main.cpp
+    src/FileScanner.cpp
+    src/FileClassifier.cpp
+    src/FileMove.cpp
+    
+)
+target_include_directories(
+    FileManager
+    PRIVATE
+    inclu/
 )
