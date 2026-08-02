@@ -11,7 +11,7 @@ void FileMove::move(
     for(auto& category : files)
     {
 
-        // 创建分类文件夹
+        
         fs::path folder = target / category.first;
 
 
@@ -22,7 +22,7 @@ void FileMove::move(
 
 
 
-        // 移动每一个文件
+        
         for(auto& file : category.second)
         {
 
