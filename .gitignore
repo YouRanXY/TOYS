@@ -90,3 +90,6 @@ test/
 *.ilk
 *.exp
 *.lib
+
+#skill
+.remember/
