@@ -1,39 +1,50 @@
 #include "FileClassifier.h"
 
+#include <algorithm>
+#include <cctype>
+#include <set>
+
+std::string FileClassifier::normalizedExtension(const fs::path& file)
+{
+    auto extension = file.extension().u8string();
+    std::transform(extension.begin(), extension.end(), extension.begin(),
+        [](unsigned char character) { return static_cast<char>(std::tolower(character)); });
+    return extension;
+}
+
+std::string FileClassifier::categoryFor(const fs::path& file)
+{
+    static const std::set<std::string> images = { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp" };
+    static const std::set<std::string> code = { ".c", ".cpp", ".cc", ".cxx", ".h", ".hpp",
+        ".py", ".js", ".ts", ".java" };
+    static const std::set<std::string> text = { ".txt", ".md", ".markdown" };
+    const auto extension = normalizedExtension(file);
+    if (images.count(extension))
+    {
+        return "Images";
+    }
+    if (code.count(extension))
+    {
+        return "Code";
+    }
+    if (text.count(extension))
+    {
+        return "Text";
+    }
+    return "Other";
+}
 
 std::map<std::string, std::vector<fs::path>>
-FileClassifier::classify(std::vector<fs::path> files)
+FileClassifier::classify(const std::vector<fs::path>& files) const
 {
-
     std::map<std::string, std::vector<fs::path>> result;
-
-
-    for(const auto& file : files)
+    for (const auto& file : files)
     {
-
-        auto ext = file.extension();
-
-
-        if(ext == ".jpg" || ext == ".png")
+        const auto category = categoryFor(file);
+        if (category != "Other")
         {
-            result["Images"].push_back(file);
+            result[category].push_back(file);
         }
-
-
-        else if(ext == ".cpp" || ext == ".h")
-        {
-            result["Code"].push_back(file);
-        }
-
-
-        else if(ext == ".txt" || ext == ".markdown")
-        {
-            result["Text"].push_back(file);
-        }
-        
-
     }
-
-
     return result;
 }

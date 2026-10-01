@@ -94,3 +94,14 @@ test/
 #skill
 .remember/
 AGENTS.md
+
+# SQLite indexes and transient journal files
+*.db
+*.sqlite
+*.sqlite3
+*-journal
+*-wal
+*-shm
+
+# Keep portable CTest integration scripts
+!tests/*.cmake

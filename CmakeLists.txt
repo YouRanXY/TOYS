@@ -1,16 +1,75 @@
-cmake_minimum_required(VERSION 3.10)
-project(FileManager)
+cmake_minimum_required(VERSION 3.14)
+project(FileManager LANGUAGES C CXX)
+
 set(CMAKE_CXX_STANDARD 17)
-add_executable(
-    FileManager
-    src/main.cpp
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+find_package(SQLite3 3.24 QUIET)
+if(TARGET SQLite::SQLite3)
+    set(fileManagerSqliteTarget SQLite::SQLite3)
+elseif(TARGET SQLite3::SQLite3)
+    set(fileManagerSqliteTarget SQLite3::SQLite3)
+else()
+    include(FetchContent)
+    set(FILEMANAGER_SQLITE_URL
+        "https://www.sqlite.org/2025/sqlite-amalgamation-3500400.zip"
+        CACHE STRING "SQLite amalgamation URL (can be a local archive for offline builds)")
+    if(POLICY CMP0135)
+        cmake_policy(SET CMP0135 NEW)
+    endif()
+    FetchContent_Declare(sqlite
+        URL "${FILEMANAGER_SQLITE_URL}"
+        URL_HASH SHA256=1d3049dd0f830a025a53105fc79fd2ab9431aea99e137809d064d8ee8356b032)
+    FetchContent_MakeAvailable(sqlite)
+    add_library(fileManagerSqlite STATIC "${sqlite_SOURCE_DIR}/sqlite3.c")
+    target_include_directories(fileManagerSqlite PUBLIC "${sqlite_SOURCE_DIR}")
+    target_compile_definitions(fileManagerSqlite PRIVATE SQLITE_OMIT_LOAD_EXTENSION)
+    find_package(Threads REQUIRED)
+    target_link_libraries(fileManagerSqlite PUBLIC Threads::Threads)
+    set(fileManagerSqliteTarget fileManagerSqlite)
+endif()
+
+add_library(FileManagerCore
     src/FileScanner.cpp
     src/FileClassifier.cpp
     src/FileMove.cpp
-    
-)
-target_include_directories(
-    FileManager
-    PRIVATE
-    inclu/
-)
+    src/FileDatabase.cpp)
+target_include_directories(FileManagerCore PUBLIC inclu)
+target_link_libraries(FileManagerCore PUBLIC ${fileManagerSqliteTarget})
+
+add_executable(FileManager src/main.cpp)
+target_link_libraries(FileManager PRIVATE FileManagerCore)
+if(MINGW)
+    # Select Unicode startup code for the Windows wmain entry point.
+    target_link_options(FileManager PRIVATE -municode)
+endif()
+
+if(MSVC)
+    target_compile_options(FileManagerCore PRIVATE /W4 /utf-8)
+    target_compile_options(FileManager PRIVATE /W4 /utf-8)
+else()
+    target_compile_options(FileManagerCore PRIVATE -Wall -Wextra -Wpedantic)
+    target_compile_options(FileManager PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+
+include(CTest)
+if(BUILD_TESTING)
+    foreach(module FileScanner FileClassifier FileMove FileDatabase)
+        add_executable(${module}_test tests/${module}_test.cpp)
+        target_include_directories(${module}_test PRIVATE tests)
+        target_link_libraries(${module}_test PRIVATE FileManagerCore)
+        if(MSVC)
+            target_compile_options(${module}_test PRIVATE /W4 /utf-8)
+        endif()
+        add_test(NAME ${module} COMMAND ${module}_test)
+    endforeach()
+    add_executable(CreateFailureDatabase tests/CreateFailureDatabase.cpp)
+    target_link_libraries(CreateFailureDatabase PRIVATE FileManagerCore)
+    add_test(NAME Cli COMMAND ${CMAKE_COMMAND}
+        "-DAPP=$<TARGET_FILE:FileManager>"
+        "-DPREPARE_DB=$<TARGET_FILE:CreateFailureDatabase>"
+        "-DBUILD_ROOT=${CMAKE_CURRENT_BINARY_DIR}"
+        "-DFIXTURE=${CMAKE_CURRENT_BINARY_DIR}/fixture-cli-$<CONFIG>"
+        -P "${CMAKE_CURRENT_SOURCE_DIR}/tests/Cli_test.cmake")
+endif()

@@ -1,13 +1,16 @@
 #pragma once
-#include<filesystem>
-#include<vector>
-namespace fs=std::filesystem;
+
+#include <filesystem>
+#include <vector>
+
+namespace fs = std::filesystem;
 
 class FileScanner
 {
-    private:
-        fs::path directory;
-    public:
-        FileScanner(const fs::path& path);
-        std::vector<fs::path> scan();
+public:
+    explicit FileScanner(const fs::path& path);
+    std::vector<fs::path> scan() const;
+
+private:
+    fs::path directory;
 };
