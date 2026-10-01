@@ -34,7 +34,8 @@ add_library(FileManagerCore
     src/FileScanner.cpp
     src/FileClassifier.cpp
     src/FileMove.cpp
-    src/FileDatabase.cpp)
+    src/FileDatabase.cpp
+    src/FileWorkflow.cpp)
 target_include_directories(FileManagerCore PUBLIC inclu)
 target_link_libraries(FileManagerCore PUBLIC ${fileManagerSqliteTarget})
 
@@ -43,6 +44,19 @@ target_link_libraries(FileManager PRIVATE FileManagerCore)
 if(MINGW)
     # Select Unicode startup code for the Windows wmain entry point.
     target_link_options(FileManager PRIVATE -municode)
+endif()
+
+if(WIN32)
+    add_executable(FileManagerGui WIN32 src/FileManagerGui.cpp src/GuiTheme.cpp src/FileManagerGui.rc)
+    target_include_directories(FileManagerGui PRIVATE src)
+    target_compile_definitions(FileManagerGui PRIVATE UNICODE _UNICODE NOMINMAX WIN32_LEAN_AND_MEAN _WIN32_WINNT=0x0A00)
+    target_link_libraries(FileManagerGui PRIVATE FileManagerCore comctl32 ole32 shell32 comdlg32 uxtheme uuid)
+    if(MSVC)
+        target_compile_options(FileManagerGui PRIVATE /W4 /utf-8)
+        target_link_options(FileManagerGui PRIVATE /MANIFEST:NO)
+    elseif(MINGW)
+        target_link_options(FileManagerGui PRIVATE -municode)
+    endif()
 endif()
 
 if(MSVC)
@@ -64,6 +78,25 @@ if(BUILD_TESTING)
         endif()
         add_test(NAME ${module} COMMAND ${module}_test)
     endforeach()
+    add_executable(FileWorkflow_test tests/FileWorkflow_test.cpp)
+    target_include_directories(FileWorkflow_test PRIVATE tests)
+    target_link_libraries(FileWorkflow_test PRIVATE FileManagerCore)
+    if(MSVC)
+        target_compile_options(FileWorkflow_test PRIVATE /W4 /utf-8)
+    endif()
+    add_test(NAME FileWorkflow COMMAND FileWorkflow_test)
+    if(WIN32)
+        add_executable(FileManagerGui_test tests/FileManagerGui_test.cpp)
+        target_include_directories(FileManagerGui_test PRIVATE tests)
+        target_link_libraries(FileManagerGui_test PRIVATE FileManagerCore comctl32 gdiplus)
+        if(MSVC)
+            target_compile_options(FileManagerGui_test PRIVATE /W4 /utf-8)
+        elseif(MINGW)
+            target_link_options(FileManagerGui_test PRIVATE -municode)
+        endif()
+        add_test(NAME Gui COMMAND FileManagerGui_test "$<TARGET_FILE:FileManagerGui>"
+            "${CMAKE_CURRENT_BINARY_DIR}/GuiPreview-$<CONFIG>.png")
+    endif()
     add_executable(CreateFailureDatabase tests/CreateFailureDatabase.cpp)
     target_link_libraries(CreateFailureDatabase PRIVATE FileManagerCore)
     add_test(NAME Cli COMMAND ${CMAKE_COMMAND}
